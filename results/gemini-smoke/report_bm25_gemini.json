@@ -1,0 +1,278 @@
+{
+  "config": {
+    "retriever": "bm25",
+    "generator": "gemini",
+    "k": 3,
+    "ks": [
+      1,
+      3,
+      5
+    ],
+    "support_judge": "LexicalSupportJudge",
+    "model": "gemini-3.8-flash",
+    "max_tokens": 2048,
+    "request_interval": 15.0,
+    "max_retries": 3,
+    "support_threshold": 0.8,
+    "case_limit": 3,
+    "total_input_cases": 37,
+    "inputs": {
+      "corpus": {
+        "path": "/Users/shivam/Downloads/rag-eval/data/corpus.jsonl",
+        "sha256": "5d26ebbc3296303c1a4fad6a903dcb939fdef1be46951651917830ac88de4de3"
+      },
+      "cases": {
+        "path": "/Users/shivam/Downloads/rag-eval/data/cases.jsonl",
+        "sha256": "17ea9f151034ffc8b32b83361ce2ca5de4bac13cfce6524437a62229d0fc76c0"
+      }
+    }
+  },
+  "retrieval": {
+    "n": 3,
+    "recall@1": {
+      "mean": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "recall@3": {
+      "mean": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "recall@5": {
+      "mean": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "mrr": {
+      "mean": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "by_type": {
+      "known": {
+        "n": 3,
+        "mrr": 1.0,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0
+      }
+    }
+  },
+  "generation_oracle": {
+    "answer_ok": 1.0,
+    "by_type": {
+      "known": {
+        "n": 3,
+        "answer_ok": 1.0
+      }
+    },
+    "abstention_accuracy": null
+  },
+  "attribution_e2e": {
+    "n_answered": 3,
+    "mean_faithfulness": 1.0,
+    "citation_validity": 1.0,
+    "citation_precision": 1.0,
+    "citation_ok_rate": 1.0,
+    "forbidden_source_cited": 0.0
+  },
+  "attribution_oracle": {
+    "n_answered": 3,
+    "mean_faithfulness": 1.0,
+    "citation_validity": 1.0,
+    "citation_precision": 1.0,
+    "citation_ok_rate": 1.0,
+    "forbidden_source_cited": 0.0
+  },
+  "end_to_end": {
+    "n": 3,
+    "pass_rate": 1.0,
+    "pass_ci95": [
+      1.0,
+      1.0
+    ],
+    "diagnosis_counts": {
+      "PASS": 3,
+      "RETRIEVAL_MISS": 0,
+      "DISTRACTOR_INTERFERENCE": 0,
+      "WRONG_ANSWER_GIVEN_GOLD": 0,
+      "OVER_ABSTENTION": 0,
+      "UNSUPPORTED_GENERATION": 0,
+      "ADVERSARIAL_COMPLIANCE": 0,
+      "CITATION_UNFAITHFUL": 0
+    },
+    "by_type": {
+      "known": {
+        "PASS": 3
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "k01",
+      "type": "known",
+      "tags": [],
+      "question": "How much does the Team plan cost per month?",
+      "gold_ids": [
+        "pricing_plans"
+      ],
+      "must_abstain": false,
+      "retrieved": [
+        "pricing_plans",
+        "analytics_product",
+        "sla"
+      ],
+      "retrieval_hit": true,
+      "e2e_answer": "The Team plan costs $40 per month [pricing_plans].",
+      "e2e": {
+        "abstained": false,
+        "correct": true,
+        "forbidden_phrase": false,
+        "answer_ok": true,
+        "faithfulness": 1.0,
+        "citations_valid": true,
+        "cites_gold": true,
+        "citation_precision": 1.0,
+        "cites_forbidden": false,
+        "citation_ok": true
+      },
+      "e2e_citations": [
+        "pricing_plans"
+      ],
+      "oracle_context": [
+        "pricing_plans"
+      ],
+      "oracle_citations": [
+        "pricing_plans"
+      ],
+      "oracle_answer": "The Team plan costs $40 per month [pricing_plans].",
+      "oracle": {
+        "abstained": false,
+        "correct": true,
+        "forbidden_phrase": false,
+        "answer_ok": true,
+        "faithfulness": 1.0,
+        "citations_valid": true,
+        "cites_gold": true,
+        "citation_precision": 1.0,
+        "cites_forbidden": false,
+        "citation_ok": true
+      },
+      "diagnosis": "PASS"
+    },
+    {
+      "id": "k02",
+      "type": "known",
+      "tags": [],
+      "question": "How much storage does the Starter plan include?",
+      "gold_ids": [
+        "pricing_plans"
+      ],
+      "must_abstain": false,
+      "retrieved": [
+        "pricing_plans",
+        "trial",
+        "sla"
+      ],
+      "retrieval_hit": true,
+      "e2e_answer": "The Starter plan includes 50 GB of storage [pricing_plans].",
+      "e2e": {
+        "abstained": false,
+        "correct": true,
+        "forbidden_phrase": false,
+        "answer_ok": true,
+        "faithfulness": 1.0,
+        "citations_valid": true,
+        "cites_gold": true,
+        "citation_precision": 1.0,
+        "cites_forbidden": false,
+        "citation_ok": true
+      },
+      "e2e_citations": [
+        "pricing_plans"
+      ],
+      "oracle_context": [
+        "pricing_plans"
+      ],
+      "oracle_citations": [
+        "pricing_plans"
+      ],
+      "oracle_answer": "The Starter plan includes 50 GB of storage [pricing_plans].",
+      "oracle": {
+        "abstained": false,
+        "correct": true,
+        "forbidden_phrase": false,
+        "answer_ok": true,
+        "faithfulness": 1.0,
+        "citations_valid": true,
+        "cites_gold": true,
+        "citation_precision": 1.0,
+        "cites_forbidden": false,
+        "citation_ok": true
+      },
+      "diagnosis": "PASS"
+    },
+    {
+      "id": "k03",
+      "type": "known",
+      "tags": [],
+      "question": "How long do I have to request a full refund?",
+      "gold_ids": [
+        "refund_policy"
+      ],
+      "must_abstain": false,
+      "retrieved": [
+        "refund_policy",
+        "refund_policy_legacy",
+        "api_limits"
+      ],
+      "retrieval_hit": true,
+      "e2e_answer": "Customers may request a full refund within 30 days of purchase [refund_policy].",
+      "e2e": {
+        "abstained": false,
+        "correct": true,
+        "forbidden_phrase": false,
+        "answer_ok": true,
+        "faithfulness": 1.0,
+        "citations_valid": true,
+        "cites_gold": true,
+        "citation_precision": 1.0,
+        "cites_forbidden": false,
+        "citation_ok": true
+      },
+      "e2e_citations": [
+        "refund_policy"
+      ],
+      "oracle_context": [
+        "refund_policy_legacy",
+        "refund_policy"
+      ],
+      "oracle_citations": [
+        "refund_policy"
+      ],
+      "oracle_answer": "You may request a full refund within 30 days of purchase [refund_policy].",
+      "oracle": {
+        "abstained": false,
+        "correct": true,
+        "forbidden_phrase": false,
+        "answer_ok": true,
+        "faithfulness": 1.0,
+        "citations_valid": true,
+        "cites_gold": true,
+        "citation_precision": 1.0,
+        "cites_forbidden": false,
+        "citation_ok": true
+      },
+      "diagnosis": "PASS"
+    }
+  ]
+}

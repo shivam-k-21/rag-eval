@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-eval"
+version = "0.1.0"
+description = "Dependency-free staged RAG reliability evaluation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+anthropic = ["anthropic"]
+
+[project.scripts]
+rag-eval = "rag_eval.cli:main"
+
+[tool.setuptools]
+packages = ["rag_eval", "rag_eval.datasets"]
+
+[tool.setuptools.package-dir]
+"rag_eval.datasets" = "data"
+
+[tool.setuptools.package-data]
+"rag_eval.datasets" = ["*.jsonl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
