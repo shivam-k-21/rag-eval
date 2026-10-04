@@ -18,13 +18,15 @@ anthropic = ["anthropic"]
 rag-eval = "rag_eval.cli:main"
 
 [tool.setuptools]
-packages = ["rag_eval", "rag_eval.datasets"]
+packages = ["rag_eval", "rag_eval.datasets", "rag_eval.datasets.validation"]
 
 [tool.setuptools.package-dir]
 "rag_eval.datasets" = "data"
+"rag_eval.datasets.validation" = "data/validation"
 
 [tool.setuptools.package-data]
 "rag_eval.datasets" = ["*.jsonl"]
+"rag_eval.datasets.validation" = ["*.jsonl"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

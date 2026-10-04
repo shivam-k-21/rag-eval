@@ -1,0 +1,1 @@
+{"key": "70e54f9e8ff0dba2c75bec0941e98409df8971c5bf9b1b685395349f1b1d94cf", "answer": {"text": "Yes, your information is encrypted at rest using AES-256 [n_encrypt].", "citations": ["n_encrypt"], "abstained": false}}

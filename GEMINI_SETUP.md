@@ -90,9 +90,10 @@ token, and daily quotas in AI Studio. See
 - Empty, blocked, or truncated response: evaluation stops without treating the
   provider failure as model abstention or scoring it as an answer.
 
-On failure, the current retriever's report is not written and partial answers are
-not saved. Earlier completed retrievers and previous runs retain their reports.
-There is no resume or caching feature; rerunning starts the evaluation over.
+On failure, the current retriever's report is not written. Completed answers are
+saved atomically in `OUT/.checkpoints/`; rerun the same command to resume. Earlier
+reports remain in place. Use `--no-resume` for a fresh trial. Per-case progress
+shows which answers were cached and which were generated.
 
 The adapter uses temperature zero and a 2,048-token output budget. Thought parts
 are excluded from answer parsing. The exact `INSUFFICIENT_EVIDENCE` marker counts

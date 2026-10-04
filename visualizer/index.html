@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>RAG Observatory · Evaluation explorer</title><link rel="stylesheet" href="styles.css"><script src="app.js" defer></script></head>
+<body>
+<a class="skip" href="#main">Skip to results</a>
+<div class="app-shell">
+<aside class="sidebar">
+  <a href="/" class="brand"><span class="brand-mark" aria-hidden="true">R/</span><span>RAG Observatory<small>Evaluation explorer</small></span></a>
+  <div class="library-header"><h2>Saved runs</h2><button id="refresh" class="text-button" title="Reload reports from disk">Refresh</button></div>
+  <label class="sr-only" for="run-search">Search runs</label><input id="run-search" type="search" placeholder="Find a model or dataset…">
+  <nav id="runs" aria-label="Evaluation runs"><p class="muted">Loading saved reports…</p></nav>
+  <div class="sidebar-bottom"><label class="import-button" for="import">Import report JSON</label><input id="import" type="file" accept=".json,application/json" class="sr-only" multiple><p>Local reports. No provider calls.<br>Imported files stay in your browser.</p></div>
+</aside>
+<main id="main">
+  <header class="topbar"><span>Reliability / <span id="dataset-label">Saved evaluations</span></span><button id="export" class="outline-button">Export cases CSV</button></header>
+  <div id="notice" role="status" class="notice" hidden></div>
+  <section id="overview" aria-labelledby="title">
+    <div class="title-row"><div><span class="eyebrow" id="run-mode">Evaluation</span><h1 id="title">Follow the evidence.</h1><p id="subtitle" class="muted">Inspect retrieval, generation, and the claims behind each score.</p></div><div class="view-controls"><label for="stage">Answer stage</label><select id="stage"><option value="e2e">End-to-end</option><option value="oracle">Oracle context</option></select><label class="audit-toggle" id="audit-control" hidden><input id="audited" type="checkbox"> Assistant audit</label></div></div>
+    <div id="provenance" class="provenance"></div>
+    <div class="summary-grid"><div class="score-panel"><span id="score-label">End-to-end pass rate</span><div class="score-number" id="score">—</div><p id="score-count"></p><div id="score-ci" class="muted"></div></div><div class="pipeline"><div class="section-heading"><h2>Where the pipeline holds</h2><span id="pipeline-context" class="muted">Different denominators</span></div><div id="stages"></div></div></div>
+    <div class="analysis-grid"><section class="diagnoses"><div class="section-heading"><h2>Outcome breakdown</h2><button id="reset-diagnosis" class="text-button">Show all</button></div><p class="muted small">Select an outcome to inspect its cases.</p><div id="diagnoses"></div></section><section class="comparison"><div class="section-heading"><h2>Compare a run</h2></div><label class="sr-only" for="compare">Comparison run</label><select id="compare"><option value="">Choose a saved run</option></select><div id="comparison-body" class="muted">Compare settings before interpreting a score difference.</div></section></div>
+    <details id="validation-panel" class="validation-panel"><summary>Grader validation · separate labeled probes</summary><div id="validation-body"></div></details>
+  </section>
+  <section class="case-section" aria-labelledby="case-title"><div class="section-heading"><h2 id="case-title">Case explorer <span id="case-count" class="muted"></span></h2><span class="muted small">Select a case to trace its evidence</span></div><div class="filters"><label class="sr-only" for="query">Search cases</label><input id="query" type="search" placeholder="Search questions, answers, IDs…"><label class="sr-only" for="type">Case type</label><select id="type"><option value="">All types</option><option value="known">Known answer</option><option value="unanswerable">Unanswerable</option><option value="adversarial">Adversarial</option></select><label class="sr-only" for="diagnosis">Outcome</label><select id="diagnosis"><option value="">All outcomes</option></select><label class="failures-toggle"><input id="failures" type="checkbox"> Failures only</label></div><div class="case-workspace"><div id="case-list" class="case-list" role="region" aria-label="Filtered cases"></div><article id="detail" class="detail" aria-live="polite"><p class="muted">Choose a case to inspect its answer and sources.</p></article></div></section>
+  <footer><span>Scores are evidence to inspect.</span><span>Small synthetic datasets · no production-quality claim</span></footer>
+</main>
+</div>
+</body></html>

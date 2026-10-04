@@ -1,0 +1,39 @@
+{
+  "evaluation_mode": "controlled_comparison",
+  "generator": "groq",
+  "model": "qwen/qwen3.8-27b",
+  "dataset": "validation_v1",
+  "k": 3,
+  "judge": "StructuredSupportJudge",
+  "scoring_version": "3.0",
+  "inputs": {
+    "corpus": {
+      "path": "/Users/shivam/Downloads/rag-eval/data/validation/corpus.jsonl",
+      "sha256": "f6d613e8e37932f55dd32728e5a368bb54fc8ae4f39094df28a3e0ba5e80716e"
+    },
+    "cases": {
+      "path": "/Users/shivam/Downloads/rag-eval/data/validation/cases.jsonl",
+      "sha256": "69abe5f5fa4a88c76932ecde2a5c7d1b14d770e1a53b97c9802a3f13f78938bd"
+    }
+  },
+  "reports": [
+    {
+      "path": "report_bm25_groq.json",
+      "sha256": "e5f71061d804a661fa03a9011832293658f0e98e4e6cd5da566702cc4078fa32",
+      "recall_at_3": 0.95,
+      "mrr": 0.825,
+      "pass_rate": 0.875,
+      "passes": 21,
+      "n": 24
+    },
+    {
+      "path": "report_expanded_bm25_groq.json",
+      "sha256": "caa192c7c746720379065ae05ad57942afb6ca20911c05f0704f1b28a413f69a",
+      "recall_at_3": 1.0,
+      "mrr": 0.9,
+      "pass_rate": 0.875,
+      "passes": 21,
+      "n": 24
+    }
+  ]
+}

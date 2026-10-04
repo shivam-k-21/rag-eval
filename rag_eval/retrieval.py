@@ -5,7 +5,7 @@ import math
 from collections import Counter
 from typing import Protocol
 
-from .text import content_tokens
+from .text import content_tokens, tokenize, stem, STOPWORDS
 from .types import Doc
 
 
@@ -24,10 +24,11 @@ def _rank(ids, scores, k):
 class BM25Retriever:
     name = "bm25"
 
-    def __init__(self, docs: list[Doc], k1: float = 1.5, b: float = 0.75):
+    def __init__(self, docs: list[Doc], k1: float = 1.5, b: float = 0.75, tokenizer=content_tokens):
         self.ids = [d.id for d in docs]
         self.k1, self.b = k1, b
-        self.tf = [Counter(content_tokens(d.text)) for d in docs]
+        self.tokenizer = tokenizer
+        self.tf = [Counter(tokenizer(d.text)) for d in docs]
         self.len = [sum(c.values()) for c in self.tf]
         self.avg = (sum(self.len) / len(self.len) if self.len else 0) or 1.0
         df = Counter()
@@ -37,7 +38,7 @@ class BM25Retriever:
         self.idf = {t: math.log(1 + (n - d + 0.5) / (d + 0.5)) for t, d in df.items()}
 
     def search(self, query: str, k: int):
-        q = set(content_tokens(query))
+        q = set(self.tokenizer(query))
         scores = []
         for i, c in enumerate(self.tf):
             s = 0.0
@@ -74,4 +75,22 @@ class TfidfRetriever:
         return _rank(self.ids, scores, k)
 
 
-RETRIEVERS = {"bm25": BM25Retriever, "tfidf": TfidfRetriever}
+def expanded_tokens(text):
+    """Small explicit vocabulary normalization, developed on the original cases.
+
+    This is lexical query expansion, not dense semantic retrieval.
+    """
+    aliases = {"scrambled": "encrypted", "encryption": "encrypted",
+               "certifications": "certified", "certification": "certified",
+               "information": "data", "stored": "rest"}
+    return [stem(aliases.get(t, t)) for t in tokenize(text) if t not in STOPWORDS]
+
+
+class ExpandedBM25Retriever(BM25Retriever):
+    name = "expanded_bm25"
+
+    def __init__(self, docs):
+        super().__init__(docs, tokenizer=expanded_tokens)
+
+
+RETRIEVERS = {"bm25": BM25Retriever, "tfidf": TfidfRetriever, "expanded_bm25": ExpandedBM25Retriever}

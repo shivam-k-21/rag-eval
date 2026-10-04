@@ -6,12 +6,38 @@ instead of being scored as one opaque number.
 
 Pure Python 3.10+, no runtime dependencies (`anthropic` and `pytest` optional).
 
+Explore saved evaluations with the separate [RAG Observatory visualizer](visualizer/README.md):
+run `python visualizer/server.py`, then open [http://127.0.0.1:8765](http://127.0.0.1:8765).
+It includes source evidence, case filters, run comparisons and an explicit assistant-audit view.
+
+[EXPERIMENTS.md](EXPERIMENTS.md) documents the new `--judge structured` option,
+fresh grader validation, a controlled retrieval comparison, and the matched
+Groq command. The original conservative judge remains available and is the default.
+
+The completed fresh Groq comparison (`qwen/qwen3.8-27b`, K=3, structured judge)
+records **21/24 automated passes for both retrievers**. Expanded BM25 improves
+Recall@3 from **95% to 100%**. See [the experiment results](EXPERIMENTS.md)
+for provenance and remaining grading limitations.
+
 **Use Groq for free-tier hosted evaluation.** See [GROQ_SETUP.md](GROQ_SETUP.md)
 for key setup, a six-request smoke check, and the complete run. No extra SDK is
 needed. [Gemini setup](GEMINI_SETUP.md) is also available.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the complete data flow, file-by-file
 responsibilities, data contracts, extension points, and scoring limitations.
+
+For interview preparation, see [50 project questions and answers](INTERVIEW_QA.md).
+
+See [HOLDOUT_AUDIT.md](HOLDOUT_AUDIT.md) for the completed Groq holdout run:
+8/12 automated passes and a separate assistant source review of 11/12, with
+three grading false positives and one retained deadline-versus-duration error.
+
+See [FAILURE_ANALYSIS.md](FAILURE_ANALYSIS.md) for the reviewed Groq failures,
+scoring version 2.0, vocabulary-expansion experiments, and post-audit results.
+Hosted runs now show per-case progress and save answer checkpoints automatically;
+rerunning the same command resumes completed work. Use `--no-resume` for a fresh
+trial. The default support judge is conservative lexical; `--judge groq
+--judge-model MODEL_ID` adds model-backed support checks and extra API requests.
 
 Install in an isolated environment with `python3 -m venv .venv`, activate it with
 `source .venv/bin/activate`, then run `pip install '.[test]'`. Installation includes
@@ -46,8 +72,9 @@ python -m rag_eval --generator groq --model openai/gpt-oss-20b --retriever bm25 
 - **Unanswerable (7)**: correct behaviour is abstention.
 - **Adversarial (8)**: prompt injection in the corpus and in the query, a stale superseded policy, a near-duplicate distractor product, a false-premise question, negation, and a lexically-similar question with no answer.
 
-**Citation faithfulness**: an answer sentence is supported when >=80% of its content words appear in the
-*cited* chunks (not merely anywhere in the context). Citations must also exist in the provided context,
+**Citation faithfulness**: the default conservative judge requires >=80% token
+support within an evidence sentence plus subject, number, unit and polarity guards.
+Support uses the chunks cited by each claim. Citations must also exist in the provided context,
 point at a gold chunk when one exists, and never cite a forbidden (stale / injected / distractor) chunk.
 
 **Root-cause taxonomy**: `RETRIEVAL_MISS`, `DISTRACTOR_INTERFERENCE` (gold present and the generator
@@ -80,7 +107,7 @@ End-to-end failures (13 of 37): 7 over-abstentions, 2 retrieval misses, 2 unsupp
 
 ## Extending
 
-- **Retriever**: any object with `.name` and `.search(query, k) -> [(doc_id, score)]` (dense, hybrid, reranker).
+- **Retriever**: any object with `.name` and `.search(query, k) -> [(doc_id, score)]` (dense, hybrid, reranker). `expanded_bm25` provides development-tuned vocabulary normalization alongside the original baselines.
 - **Generator**: any object with `.generate(question, context_docs) -> Answer`. Anthropic, Gemini, and Groq adapters are included.
 - **Support judge**: implement `SupportJudge.supported(claim, evidence)` to replace the lexical check with NLI or an LLM judge.
 - **Data**: add JSONL lines to `data/`; the schema is `Case` / `Doc` in `rag_eval/types.py`.
@@ -90,5 +117,5 @@ End-to-end failures (13 of 37): 7 over-abstentions, 2 retrieval misses, 2 unsupp
 - The corpus and cases are small and synthetic, so confidence intervals are wide (e.g. pass rate 0.49-0.78). Absolute numbers illustrate the method; they are not a benchmark.
 - BM25 and TF-IDF tie on every metric here; an 18-passage corpus cannot separate them.
 - The baseline generator is deterministic and extractive, chosen as a reproducible lower bound. Hosted adapters are tested with mocks; the build environment has no live API keys. Gemini's three-case smoke run was completed separately by the user, but no full live evaluation has been verified here.
-- The lexical support judge can be fooled by paraphrase, and it cannot detect contradictions (it would accept "Starter has an uptime guarantee" if the words overlap). Use an NLI/LLM judge for production decisions.
+- Rule-based support guards catch some contradictions and numerical mistakes, but do not establish semantic entailment. Valid paraphrases can still fail; use the optional Groq judge plus human validation for semantic review.
 - Answer correctness is substring matching against accepted aliases, which is strict for free-form LLM output.

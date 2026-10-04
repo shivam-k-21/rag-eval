@@ -1,0 +1,28 @@
+{"id": "s01", "claim": "Nimbus Storage has about 240 employees.", "evidence": ["Nimbus Storage was founded in 2019. The company has about 240 employees."], "expected": true, "category": "reference"}
+{"id": "s02", "claim": "Nimbus Storage has about 241 employees.", "evidence": ["Nimbus Storage was founded in 2019. The company has about 240 employees."], "expected": false, "category": "number"}
+{"id": "s03", "claim": "Orion Storage has about 240 employees.", "evidence": ["Nimbus Storage was founded in 2019. The company has about 240 employees."], "expected": false, "category": "subject"}
+{"id": "s04", "claim": "Nimbus Storage has about 2019 employees.", "evidence": ["Nimbus Storage was founded in 2019. The company has about 240 employees."], "expected": false, "category": "borrowed_number"}
+{"id": "s05", "claim": "Yes, Kyoto is one of the available data center regions.", "evidence": ["Nimbus operates data centers in Oslo, Toronto, and Kyoto."], "expected": true, "category": "membership"}
+{"id": "s06", "claim": "Yes, Madrid is one of the available data center regions.", "evidence": ["Nimbus operates data centers in Oslo, Toronto, and Kyoto."], "expected": false, "category": "membership"}
+{"id": "s07", "claim": "Kyoto is not one of the available data center regions.", "evidence": ["Nimbus operates data centers in Oslo, Toronto, and Kyoto."], "expected": false, "category": "polarity"}
+{"id": "s08", "claim": "Kyoto is one of the available data center regions.", "evidence": ["Nimbus is headquartered in Kyoto."], "expected": false, "category": "wrong_relation"}
+{"id": "s09", "claim": "All data is permanently erased within 45 days after deletion.", "evidence": ["All data is permanently erased within 45 days after deletion."], "expected": true, "category": "deadline"}
+{"id": "s10", "claim": "All data is permanently erased in exactly 45 days after deletion.", "evidence": ["All data is permanently erased within 45 days after deletion."], "expected": false, "category": "deadline"}
+{"id": "s11", "claim": "All data is permanently erased in 45 days after deletion.", "evidence": ["All data is permanently erased within 45 days after deletion."], "expected": false, "category": "deadline"}
+{"id": "s12", "claim": "All data is permanently erased within 45 hours after deletion.", "evidence": ["All data is permanently erased within 45 days after deletion."], "expected": false, "category": "unit"}
+{"id": "s13", "claim": "Backups are retained for at most 50 days.", "evidence": ["Backups are retained for at most 50 days."], "expected": true, "category": "bound"}
+{"id": "s14", "claim": "Backups are retained for 50 days.", "evidence": ["Backups are retained for at most 50 days."], "expected": false, "category": "bound"}
+{"id": "s15", "claim": "Backups are retained for at least 50 days.", "evidence": ["Backups are retained for at most 50 days."], "expected": false, "category": "bound"}
+{"id": "s16", "claim": "Backups are retained for 50 days.", "evidence": ["Backups are retained for 50 days."], "expected": true, "category": "exact"}
+{"id": "s17", "claim": "The Enterprise plan has custom pricing and unlimited storage.", "evidence": ["The Enterprise plan has custom pricing and unlimited storage."], "expected": true, "category": "plain"}
+{"id": "s18", "claim": "The Basic plan costs $65 per month.", "evidence": ["The Basic plan costs $18 per month. The Business plan costs $65 per month."], "expected": false, "category": "subject"}
+{"id": "s19", "claim": "No credit card is required to start the trial.", "evidence": ["No credit card is required to start the trial."], "expected": true, "category": "polarity"}
+{"id": "s20", "claim": "A credit card is required to start the trial.", "evidence": ["No credit card is required to start the trial."], "expected": false, "category": "polarity"}
+{"id": "s21", "claim": "The maximum upload size is 7 GB.", "evidence": ["The maximum upload size is 7 GB."], "expected": true, "category": "plain"}
+{"id": "s22", "claim": "The maximum upload size is 7 TB.", "evidence": ["The maximum upload size is 7 GB."], "expected": false, "category": "unit"}
+{"id": "s23", "claim": "The public API allows 900 requests per minute.", "evidence": ["The public API allows 900 requests per minute."], "expected": true, "category": "plain"}
+{"id": "s24", "claim": "The public API allows 900 requests per hour.", "evidence": ["The public API allows 900 requests per minute."], "expected": false, "category": "unit"}
+{"id": "s25", "claim": "Nimbus Storage has about 240 employees.", "evidence": ["Nimbus Storage was founded in 2019. Orion Storage was founded in 2020. The company has about 240 employees."], "expected": false, "category": "ambiguous_reference"}
+{"id": "s26", "claim": "All data is permanently erased after at least 45 days.", "evidence": ["All data is permanently erased after at least 45 days."], "expected": true, "category": "bound"}
+{"id": "s27", "claim": "All data is permanently erased after 45 days.", "evidence": ["All data is permanently erased after at least 45 days."], "expected": false, "category": "bound"}
+{"id": "s28", "claim": "The Enterprise plan costs $18 per month.", "evidence": ["The Basic plan costs $18 per month. The Enterprise plan has custom pricing."], "expected": false, "category": "borrowed_number"}

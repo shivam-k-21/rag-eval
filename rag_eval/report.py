@@ -29,9 +29,12 @@ def to_markdown(r: dict) -> str:
     c, ret, gen = r["config"], r["retrieval"], r["generation_oracle"]
     ae, ao, e2e = r["attribution_e2e"], r["attribution_oracle"], r["end_to_end"]
     L = [f"# Evaluation report: {c['retriever']} + {c['generator']} (k={c['k']})", "",
+         f"Scoring version: {c.get('scoring_version', '1.0')}; judge: {c.get('support_judge', 'LexicalSupportJudge')}; mode: {c.get('evaluation_mode', 'generated_answers')}.", "",
          "## Stage 1: Retrieval (generator not involved)", "",
          f"Scored on {ret['n']} cases with gold evidence. Brackets are 95% bootstrap CIs.", "",
          "| Metric | Value |", "|---|---|"]
+    if c.get("evaluation_mode") == "rescore_saved_answers":
+        L[2:2] = ["These are regraded saved answers, not a new model run. Retrieval and answer text are unchanged.", ""]
     metrics = [m for m in ret if m.startswith("recall@")] + ["mrr"]
     L += [f"| {m} | {_ci(ret[m])} |" for m in metrics]
     L += ["", "| Slice | n | " + " | ".join(metrics) + " |", "|---|---|" + "---|" * len(metrics)]

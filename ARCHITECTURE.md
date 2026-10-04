@@ -4,8 +4,9 @@
 
 This project evaluates retrieval-augmented generation (RAG) systems. It separates
 finding evidence, generating an answer, and checking citations so failures can be
-traced to a specific stage. It is a command-line evaluation framework, with no web
-server, database, frontend, or runtime dependency for the local baselines.
+traced to a specific stage. The evaluator is a command-line framework with no
+runtime dependency for the local baselines. A separate local web visualizer reads
+its saved reports; the evaluator itself does not require a server or database.
 
 The bundled dataset contains 18 fictional passages and 37 questions. Its known,
 unanswerable, and adversarial cases exercise correctness, abstention, injection,
@@ -38,8 +39,9 @@ an Anthropic, Gemini, or Groq run plans 148 generation requests, plus any provid
 `--limit` selects the first N
 cases for a smoke check; Gemini and Groq support `--request-interval` to space calls.
 Gemini retries temporary HTTP 500/502/503/504 errors with bounded backoff.
-There is no caching,
-parallel execution, or API result replay layer.
+Hosted runs checkpoint successfully parsed answers atomically and resume them on
+the next invocation. There is no parallel execution. Saved reports can be regraded
+without regeneration using `scripts/rescore_report.py`.
 
 ## Files and responsibilities
 
@@ -59,6 +61,13 @@ parallel execution, or API result replay layer.
 | `rag_eval/metrics.py` | Computes recall at a cutoff, reciprocal rank, means, and seeded percentile bootstrap confidence intervals. |
 | `rag_eval/evaluate.py` | Orchestrates the evaluation stages, builds oracle contexts, scores answers, diagnoses failures, and aggregates per-case outcomes. |
 | `rag_eval/report.py` | Formats human-readable reports and writes strict JSON. Undefined numeric metrics become `null` in JSON. |
+| `rag_eval/scoring.py` | Narrow refusal recognition and rule-based token, number, polarity and subject helpers. |
+| `rag_eval/checkpoint.py` | Atomic per-answer records keyed by model, prompt, implementation, question, stage and context; resumes completed work without caching credentials. |
+| `rag_eval/judges.py` | Optional Groq entailment judge with strict boolean JSON and cached verdicts; makes additional API requests. |
+| `scripts/rescore_report.py` | Regrades preserved answers, validates source evidence identity and records replay provenance. |
+| `tests/test_improvements.py` | Regression coverage for false grading failures, wrong facts and sources, resume identity, corrupt cache records and semantic judge responses. |
+| `data/holdout_cases.jsonl` | Twelve post-audit synthetic checks kept separate from the 37 development cases. |
+| `FAILURE_ANALYSIS.md` | Original failure audit, regrading results, retrieval comparison and experiment limitations. |
 | `data/corpus.jsonl` | Fictional source passages, one document per line. |
 | `data/cases.jsonl` | Evaluation questions and gold/forbidden annotations, one case per line. |
 | `data/__init__.py` | Allows packaging the data directory as `rag_eval.datasets`; the source checkout continues to use `data/`. |
@@ -131,8 +140,8 @@ registry includes Gemini alongside the original `GENERATORS`; library callers
 can import `GeminiGenerator` from `rag_eval.gemini`. Its 2,048-token output budget
 allows room for reasoning models, and thought parts are excluded from answers.
 Only normally completed nonempty responses are scored. Unrecovered provider failures abort
-the current run rather than being classified as abstention. Partial answers are
-not saved. Temporary server errors are retried up to three times by default,
+the current run rather than being classified as abstention. Completed answers are
+checkpointed by the CLI; the current report is written on completion. Temporary server errors are retried up to three times by default,
 with exponential backoff and request spacing. Numeric `Retry-After` values up to
 60 seconds are honored; longer requested waits stop the run. `--max-retries` allows
 0-5 retries. Permanent errors, quota errors, network failures, and malformed or
@@ -155,7 +164,9 @@ abstention. All adapters use explicit model IDs and have no silent fallback.
 ### Correctness and attribution
 
 Correctness uses lowercase, whitespace-normalized substring matching. Forbidden
-phrases fail answer scoring even if an acceptable alias also appears. Abstention
+phrases fail answer scoring even if an acceptable alias also appears, except a
+narrow standalone refusal to print/reveal/share/disclose the system prompt. Refusal
+sentences with appended disclosure are not exempted. Abstention
 is required on `must_abstain` cases. Cases without answer aliases otherwise use
 the forbidden-phrase check as their answer acceptance rule.
 
@@ -166,9 +177,24 @@ requires at least 80% overlap between a claim's content words and cited evidence
 Every answer sentence must be supported for the combined citation check to pass.
 Abstentions have undefined attribution metrics rather than fabricated successes.
 
-The current judge pools all cited passages for sentence support. It does not bind
-each inline citation to its individual claim, recognize contradictions, or reliably
-judge paraphrases. These constraints matter when interpreting LLM answers.
+Scoring version 2.0 binds each claim to its inline citations and rejects uncited
+substantive claims. The default `ConservativeSupportJudge` matches evidence one
+sentence at a time and applies number, unit, polarity and subject guards with a
+small vocabulary of conversational wrappers. It is a heuristic and can still
+reject valid paraphrases. The original `LexicalSupportJudge` is available through
+`--judge lexical` with the updated citation binding. `--judge groq --judge-model
+MODEL_ID` enables model-backed entailment decisions with extra quota use and
+checkpointed verdicts. Human spot checks remain necessary.
+
+`expanded_bm25` performs explicit development-tuned vocabulary normalization.
+It is not dense retrieval. Development Recall@3 improves, while the 12 post-audit
+cases show no difference between it and BM25. Keep those case roles separate.
+
+Checkpoints exclude secrets and use a model/prompt/implementation/question/stage/
+context hash. Changing evidence or the model creates a new record; changing only
+grading can reuse the same generation. Use separate output directories or
+`--no-resume` for independent trials. Replay preserves original answers and metrics
+and stores the original report fingerprint alongside the reviewed case fingerprint.
 
 ### Diagnosis and reporting
 
@@ -223,3 +249,34 @@ production quality. The bundled local baselines are verified; live Anthropic and
 Gemini and Groq results require a real API run. The user completed a three-case
 Gemini smoke run separately; the full dataset and live Groq integration have
 not been verified in this build environment.
+# Architecture additions: scoring v3 and separate visualizer
+
+`rag_eval/semantic.py` implements optional `StructuredSupportJudge`. It extends
+the conservative sentence-level check with bounded reference resolution,
+list membership, quantity-scope preservation and a rate-limit paraphrase.
+Its refusal recognizer uses complete sentences so appended disclosures remain
+visible. `evaluate.py` and `attribution.py` use the judge's refusal policy and
+record its scoring version; the original judge retains version 2.0 behavior.
+The CLI and saved-report replay script accept `--judge structured`.
+
+`data/validation/` contains a separate Nimbus corpus, 24 RAG questions, 28 source
+support probes and eight refusal probes. `scripts/validate_judge.py` measures
+judge decisions against fixed labels. `scripts/run_comparison.py` runs both
+BM25 variants with identical model/generator, K, judge and data, then writes a
+comparison manifest. Both scripts record provenance; the comparison uses
+normal checkpointing for hosted runs. These data files are included in wheels.
+
+`visualizer/` is a separate application with no evaluator import or provider
+access. `server.py` reads reports and verified source corpora and serves a
+loopback-only API and four fixed assets. `index.html`, `styles.css`, and
+`app.js` display runs, diagnoses, source evidence, comparisons and audit views.
+Audit records attach only to the original report fingerprint; imported reports
+remain in browser memory. Evidence is shown only when the saved corpus hash
+matches the local source. See [visualizer/README.md](visualizer/README.md) for
+startup, controls, data handling and module responsibilities.
+
+`tests/test_structured.py` checks positive and negative support probes, refusal
+disclosures, claim-specific citations, preservation of old reports, fresh data
+integrity, comparison provenance, and the visualizer's source/hash boundaries.
+See [EXPERIMENTS.md](EXPERIMENTS.md) for results and limitations. The audited
+Helios holdout now informs v3 development; its replay is a regression check.

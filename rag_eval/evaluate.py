@@ -10,7 +10,8 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass
 
-from .attribution import LexicalSupportJudge, SupportJudge, attribute
+from .attribution import ConservativeSupportJudge, SupportJudge, attribute
+from .scoring import substantive_text
 from .metrics import bootstrap_ci, mean, recall_at_k, reciprocal_rank
 from .types import Answer, Case, Doc, validate_dataset
 
@@ -65,8 +66,20 @@ def evaluate_retrieval(retriever, cases: list[Case], ks=(1, 3, 5), depth: int | 
 
 
 # --- Stage 2 ---------------------------------------------------------------------------
-def run_generation(generator, cases: list[Case], contexts: dict[str, list[Doc]]) -> dict[str, Answer]:
-    return {c.id: generator.generate(c.question, contexts[c.id]) for c in cases}
+def run_generation(generator, cases: list[Case], contexts: dict[str, list[Doc]],
+                   checkpoint=None, progress=None, stage="e2e") -> dict[str, Answer]:
+    answers = {}
+    for index, case in enumerate(cases, 1):
+        if progress:
+            progress(stage, case.id, index, len(cases), "starting")
+        if checkpoint:
+            answer, cached = checkpoint.generate(generator, case, contexts[case.id], stage)
+        else:
+            answer, cached = generator.generate(case.question, contexts[case.id]), False
+        answers[case.id] = answer
+        if progress:
+            progress(stage, case.id, index, len(cases), "cached" if cached else "saved" if checkpoint else "complete")
+    return answers
 
 
 def oracle_context(case: Case, corpus: dict[str, Doc], fallback_ids: list[str]) -> list[Doc]:
@@ -97,7 +110,9 @@ def score_answer(case: Case, answer: Answer, context_ids: list[str], corpus: dic
                  judge: SupportJudge) -> AnswerScore:
     text = _norm(answer.text)
     correct = None if not case.answers else any(_norm(a) in text for a in case.answers)
-    forbidden = any(_norm(p) in text for p in case.forbidden_phrases)
+    from .scoring import is_safe_refusal
+    forbidden_text = _norm(substantive_text(answer.text, getattr(judge, "safe_refusal", is_safe_refusal)))
+    forbidden = any(_norm(p) in forbidden_text for p in case.forbidden_phrases)
     if case.must_abstain:
         ok = answer.abstained and not forbidden
     elif case.answers:
@@ -109,7 +124,7 @@ def score_answer(case: Case, answer: Answer, context_ids: list[str], corpus: dic
 
 
 def score_answers(cases, answers, contexts, corpus, judge=None) -> dict[str, AnswerScore]:
-    judge = judge or LexicalSupportJudge()
+    judge = judge or ConservativeSupportJudge()
     return {c.id: score_answer(c, answers[c.id], [d.id for d in contexts[c.id]], corpus, judge) for c in cases}
 
 
@@ -132,18 +147,20 @@ def diagnose(case: Case, ranked: list[str], k: int, e2e: AnswerScore, oracle: An
 
 
 # --- orchestration ----------------------------------------------------------------------
-def run_eval(cases, docs, retriever, generator, k: int = 3, ks=(1, 3, 5), judge=None) -> dict:
+def run_eval(cases, docs, retriever, generator, k: int = 3, ks=(1, 3, 5), judge=None,
+             checkpoint=None, progress=None) -> dict:
     validate_dataset(cases, docs)
     if k < 1:
         raise ValueError("k must be positive")
     if not ks or any(cutoff < 1 for cutoff in ks):
         raise ValueError("Retrieval cutoffs must be positive and nonempty")
-    judge = judge or LexicalSupportJudge()
+    judge = judge or ConservativeSupportJudge()
     corpus = {d.id: d for d in docs}
     retr = evaluate_retrieval(retriever, cases, ks, depth=max(max(ks), k))
     e2e_ctx = {c.id: [corpus[i] for i in retr["per_case"][c.id]["ranked"][:k]] for c in cases}
     orc_ctx = {c.id: oracle_context(c, corpus, retr["per_case"][c.id]["ranked"][:k]) for c in cases}
-    e2e_ans, orc_ans = run_generation(generator, cases, e2e_ctx), run_generation(generator, cases, orc_ctx)
+    e2e_ans = run_generation(generator, cases, e2e_ctx, checkpoint, progress, "e2e")
+    orc_ans = run_generation(generator, cases, orc_ctx, checkpoint, progress, "oracle")
     e2e = score_answers(cases, e2e_ans, e2e_ctx, corpus, judge)
     orc = score_answers(cases, orc_ans, orc_ctx, corpus, judge)
 
@@ -163,11 +180,14 @@ def run_eval(cases, docs, retriever, generator, k: int = 3, ks=(1, 3, 5), judge=
         })
     config = {"retriever": retriever.name, "generator": generator.name, "k": k,
               "ks": list(ks), "support_judge": type(judge).__name__}
+    config["scoring_version"] = getattr(judge, "scoring_version", "2.0")
     for field in ("min_coverage", "model", "max_tokens", "request_interval", "max_retries", "reasoning_effort"):
         if hasattr(generator, field):
             config[field] = getattr(generator, field)
     if hasattr(judge, "threshold"):
         config["support_threshold"] = judge.threshold
+    if hasattr(judge, "model"):
+        config["judge_model"] = judge.model
     return {"config": config,
             "retrieval": retr["summary"], "generation_oracle": _gen_summary(rows, "oracle"),
             "attribution_e2e": _attr_summary(rows, "e2e"), "attribution_oracle": _attr_summary(rows, "oracle"),

@@ -73,9 +73,17 @@ and organization in your Console. [Groq rate-limit documentation](https://consol
 - Empty, blocked, malformed, or truncated answers stop the run without being
   treated as abstention. Network failures are not retried automatically.
 
-No model switching happens during retries. On failure, partial answers are not
-saved and the current retriever's report is not written. Existing reports remain
-in place; there is no resume/caching layer.
+No model switching happens during retries. Each successful answer is now saved
+atomically in `OUT/.checkpoints/`. Rerun the same command to resume after a quota
+or provider failure; completed answers appear as `cached` in per-case progress.
+Use `--no-resume` for a fresh trial, `--checkpoint-dir PATH` to select a cache,
+or `--quiet` to hide progress. Invalid provider responses are not saved as answers.
+The current retriever's report is written only on completion; existing reports remain.
+
+The default scoring version 2.0 uses conservative support rules with claim-level
+citation binding. Optional `--judge groq --judge-model MODEL_ID` enables cached
+semantic support judgments and consumes additional API quota. See
+[failure review](FAILURE_ANALYSIS.md) for grading limitations and replay commands.
 
 Groq requests use `max_completion_tokens=2048`, temperature zero, and independent
 source-only prompts. GPT-OSS models additionally use low reasoning effort and
